@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+
+__service_names=() && __service_definitions=()
+
+##
+# Add items to the container
+#
+# The first argument should be the name of the item. The remaining arguments are
+# all treated as sequential. However, in the case of a service that points to a
+# script or file, the first of the remaining arguments is treated as the file
+# path/location and, the remaining arguments, as its input arguments.
+##
+container::add() {
+    local name="${1:?"A service name is required"}"
+    local definition="${@:2}"
+
+    __service_names+=("$name")
+    __service_definitions+=("$definition")
+}
+
+##
+# Gets the name and any existing suffix for a given service alias.
+##
+__container::parse_alias() {
+    local name="${1:?"A service name is required"}"
+    local service_alias
+
+    if [[ "$name" =~ ^@(.*)::(.*)$ ]]; then
+        # name is an alias joined by a suffix, separated by '::' - i.e.:
+        # '@example-parameter::example-suffix'
+        service_alias=("${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}")
+    elif [[ "$name" =~ ^@(.*)$ ]]; then
+        # name is an alias without a suffix - i.e.: '@example-service'
+        service_alias=("${BASH_REMATCH[1]}")
+    fi
+
+    echo ${service_alias[*]}
+}
+
+##
+# Get the definition of a given parameter or service
+##
+container::get_definition() {
+    local name="${1:?"A service name is required"}"
+    local default="${2:-}"
+    local service_alias=$(__container::parse_alias "$name")
+
+    if [[ -n "$service_alias" ]]; then
+        name="${service_alias[0]}"
+    fi
+
+    for key in ${!__service_names[*]}; do
+        if [[ $name == ${__service_names[$key]} ]]; then
+            echo "${__service_definitions[$key]}" && exit 0
+        fi
+    done
+
+    if [[ -n $default ]]; then
+        echo "$default"
+    else
+        echo "Error: No definition exists for the '$name' service." && exit 1
+    fi
+}
+
+##
+# Recursively resolves the definition of a given parameter, optionally returning
+# handles - e.g.: --handle - for each named service defined as a dependency.
+##
+container::resolve() {
+    local name="${1:?"A service name is required"}"
+    local optionHandles=${2:-false}
+    local depth=${3:-0}
+
+    local suffix
+    local service_alias=($(__container::parse_alias "$name"))
+
+    if [[ -n $service_alias ]]; then
+        name=${service_alias[0]}
+        suffix=${service_alias[1]}
+    fi
+
+    for key in ${!__service_names[*]}; do
+        if [[ ${__service_names[$key]} != "$name" ]]; then
+            continue
+        fi
+
+        local defined
+        local switch
+
+        if $optionHandles; then
+            # add an argument handle to resolved service value
+            [[ $depth > 0 ]] && switch="--$name "
+        fi
+
+        for definition in $(container::get_definition "$name"); do
+            local args=("$definition" $optionHandles $(( $depth + 1 )))
+
+            defined="$(container::resolve ${args[*]})"
+
+            if [[ $? -eq 1 ]]; then
+                # container::get_definition threw an error, meaning that no
+                # service was found for the definition; we'll just use its
+                # current value
+                defined="$definition"
+            fi
+
+            echo "${switch}${defined}${suffix}"
+
+            unset switch
+            unset args
+        done
+
+        exit 0 # exit here because the name has been matched
+    done
+
+    echo "Error: The '$name' service cannot be resolved." && exit 1
+}
+
+##
+# Gets the source path of a given service or the elements, if the service is
+# an array-like structure - i.e. begins with '--'.
+##
+container::get_source() {
+    local name="${1:?"A service name is required"}"
+    local src=($(container::get_definition "$name"))
+
+    echo ${src[0]}
+}
+
+##
+# Dumps all or a given sub-section of the container.
+##
+container::dump() {
+    local filter=$@
+
+    if [[ -z "${filter[*]}" ]]; then
+        filter=(${__service_names[*]})
+    fi
+
+    local name
+    for name in ${filter[*]}; do
+        local definition=($(container::get_definition "$name" "[null]"))
+
+        if [[ $definition == "[null]" ]]; then
+            echo " - $name ([definition not found])"
+
+            continue
+        fi
+
+        echo " - $name (${definition[0]})"
+        for argument in ${definition[*]:1}; do
+            echo "   - $argument"
+        done
+    done
+}
