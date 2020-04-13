@@ -51,14 +51,14 @@ container::get_definition() {
 
     for key in ${!__service_names[*]}; do
         if [[ $name == ${__service_names[$key]} ]]; then
-            echo "${__service_definitions[$key]}" && exit 0
+            echo "${__service_definitions[$key]}" && return 0
         fi
     done
 
     if [[ -n $default ]]; then
         echo "$default"
     else
-        echo "Error: No definition exists for the '$name' service." && exit 1
+        echo "Error: No definition exists for the '$name' service." && return 1
     fi
 }
 
@@ -110,10 +110,10 @@ container::resolve() {
             unset args
         done
 
-        exit 0 # exit here because the name has been matched
+        return 0 # return here because the name has been matched
     done
 
-    echo "Error: The '$name' service cannot be resolved." && exit 1
+    echo "Error: The '$name' service cannot be resolved." && return 1
 }
 
 ##
