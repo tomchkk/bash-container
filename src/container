@@ -2,7 +2,8 @@
 
 __container_bash_clash="$1"
 
-__service_names=() && __service_definitions=()
+__container_names=()
+__container_definitions=()
 
 ##
 # Add items to the container
@@ -16,8 +17,8 @@ container::add() {
     local name="${1:?"A service name is required"}"
     local definition="${@:2}"
 
-    __service_names+=("$name")
-    __service_definitions+=("$definition")
+    __container_names+=("$name")
+    __container_definitions+=("$definition")
 }
 
 ##
@@ -51,9 +52,9 @@ container::get_definition() {
         name="${service_alias[0]}"
     fi
 
-    for key in ${!__service_names[*]}; do
-        if [[ $name == ${__service_names[$key]} ]]; then
-            echo "${__service_definitions[$key]}" && return 0
+    for key in ${!__container_names[*]}; do
+        if [[ $name == ${__container_names[$key]} ]]; then
+            echo "${__container_definitions[$key]}" && return 0
         fi
     done
 
@@ -81,8 +82,8 @@ container::resolve() {
         suffix=${service_alias[1]}
     fi
 
-    for key in ${!__service_names[*]}; do
-        if [[ ${__service_names[$key]} != "$name" ]]; then
+    for key in ${!__container_names[*]}; do
+        if [[ ${__container_names[$key]} != "$name" ]]; then
             continue
         fi
 
@@ -136,7 +137,7 @@ container::dump() {
     local filter=$@
 
     if [[ -z "${filter[*]}" ]]; then
-        filter=(${__service_names[*]})
+        filter=(${__container_names[*]})
     fi
 
     local name
