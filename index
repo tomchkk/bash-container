@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+__bash_container_dir="$(dirname ${BASH_SOURCE[0]})"
+__bash_container_submodules="$__bash_container_dir/submodules"
+__bash_container_bash_clash="$__bash_container_submodules/tomchkk/bash-clash/src/index"
+
+bash_container_loader="$__bash_container_dir/src/loader"
+
+source "$__bash_container_dir/src/container" "$__bash_container_bash_clash"

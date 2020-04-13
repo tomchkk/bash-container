@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+__container_bash_clash="$1"
+
 __service_names=() && __service_definitions=()
 
 ##

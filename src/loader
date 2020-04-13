@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
-__dependency_loader_logger="${1:?"A logger service is required"}"
+__loader_logger="${1:?"A logger service is required"}"
 
 ##
 # Ships a debug log for the dependency loader, maintaining the logger in a sub
 # process to avoid clashing with other loaded loggers.
 ##
-__dependency_loader::log() {
+__loader::log() {
     local level="${1:?"A logging level is required"}"
     local message="${2:?"A log message is required"}"
     local context="${@:3}"
 
     (
-        builtin source $(container::resolve "$__dependency_loader_logger")
+        builtin source $(container::resolve "$__loader_logger")
         log::log "$level" "$message" ${context[*]} &
     )
 }
@@ -20,9 +20,9 @@ __dependency_loader::log() {
 ##
 # Overrides the builtin source function to enable dependency loading.
 ##
-source () {
-    __service_source="${1:?"A service, alias or filename argument is required"}"
-    __service_args=${@:2}
+source() {
+    local __service_source="${1:?"A service, alias or filename argument is required"}"
+    local __service_args=${@:2}
 
     if [[ -f "$__service_source" ]]; then
         # we're dealing with a plain ole' file to be sourced, maybe with some args..
@@ -31,42 +31,43 @@ source () {
         return 0
     fi
 
-    __service_alias="$__service_source"
-    __service_definition=($(container::get_definition "$__service_alias"))
+    local __service_alias="$__service_source"
+    local __service_definition=($(container::get_definition "$__service_alias"))
 
     if [[ $? -eq 1 ]]; then
-        __dependency_loader::log "ERROR" "The service '$__service_alias' could not be loaded."
+        __loader::log "ERROR" "The service '$__service_alias' could not be loaded."
 
         return 1
     fi
 
     __service_source=${__service_definition[0]}
-    __service_dependencies=()
+    local __service_dependencies=()
 
-    __dependency_loader::log "DEBUG" "Loading '$__service_alias'" "$__service_source"
+    __loader::log "DEBUG" "Loading '$__service_alias'" "$__service_source"
 
+    local __service_dependency
     for __service_dependency in ${__service_definition[*]:1}; do
-        __dependency_definition=(
+        local __dependency_definition=(
             $(container::get_definition "$__service_dependency" "$__service_dependency")
         )
 
         if [[ -f ${__dependency_definition[0]} ]]; then
             __service_dependencies+=($__service_dependency)
-            __dependency_loader::log "DEBUG" "Loadable dependency '$__service_dependency'" "${__dependency_definition[0]}"
+            __loader::log "DEBUG" "Loadable dependency '$__service_dependency'" "${__dependency_definition[0]}"
         else
             __service_dependencies+=(${__dependency_definition[*]})
-            __dependency_loader::log "DEBUG" "Non-loadable dependency '$__service_dependency'" "${__dependency_definition[*]}"
+            __loader::log "DEBUG" "Non-loadable dependency '$__service_dependency'" "${__dependency_definition[*]}"
         fi
     done
 
     builtin source $__service_source ${__service_dependencies[*]} $__service_args
 
-    unset \
-        __service_alias \
-        __service_args \
-        __service_definition \
-        __service_source \
-        __service_dependencies \
-        __service_dependency \
-        __dependency_definition
+    # unset \
+    #     __service_alias \
+    #     __service_args \
+    #     __service_definition \
+    #     __service_source \
+    #     __service_dependencies \
+    #     __service_dependency \
+    #     __dependency_definition
 }
