@@ -1,0 +1,8 @@
+[submodule "submodules/tomchkk/bash-clash"]
+	path = submodules/tomchkk/bash-clash
+	url = git@gitlab.com:tomchkk-private/projects/bash-clash.git
+	branch = master
+[submodule "submodules/tomchkk/bash-logger"]
+	path = submodules/tomchkk/bash-logger
+	url = git@gitlab.com:tomchkk-private/projects/bash-logger.git
+	branch = master
