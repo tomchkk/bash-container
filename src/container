@@ -6,19 +6,62 @@ __container_names=()
 __container_definitions=()
 
 ##
+# Adds a scalar value to the container.
+##
+container::add_value() {
+    local name=${1:?"A name is required"}
+    local definition="--type=scalar --value=${@:2}"
+
+    __container::add "$name" "${definition[@]}"
+}
+
+##
+# Adds an array value to the container.
+##
+container::add_array() {
+    local name=${1:?"An array name is required"}
+    local definition="--type=array -- ${@:2}"
+
+    __container::add "$name" "${definition[@]}"
+}
+
+##
+# Adds a service definition to the container.
+##
+container::add_service() {
+    local name=${1:?"A service name is required"}
+    local path=${2:?"A source file path is required"}
+
+    if [[ ! -e "$path" ]]; then
+        echo "Error: The given path for the '$name' service does not exist."
+
+        return 1
+    fi
+
+    local definition="--type=service --path=$path -- ${@:3}"
+
+    __container::add "$name" "${definition[@]}"
+}
+
+##
 # Add items to the container
 #
 # The first argument should be the name of the item. The remaining arguments are
-# all treated as sequential. However, in the case of a service that points to a
-# script or file, the first of the remaining arguments is treated as the file
-# path/location and, the remaining arguments, as its input arguments.
+# all treated as the defintiion.
 ##
-container::add() {
+__container::add() {
     local name="${1:?"A service name is required"}"
     local definition="${@:2}"
 
-    __container_names+=("$name")
-    __container_definitions+=("$definition")
+    __container_names+=("@$(__container::normalize_name $name)")
+    __container_definitions+=("${definition[@]}")
+}
+
+##
+# Normalizes a service definition name.
+##
+__container::normalize_name() {
+    echo "$@" | sed -E 's/ /-/g' | xargs
 }
 
 ##
@@ -46,22 +89,21 @@ __container::parse_alias() {
 container::get_definition() {
     local name="${1:?"A service name is required"}"
     local default="${2:-}"
-    local service_alias=$(__container::parse_alias "$name")
-
-    if [[ -n "$service_alias" ]]; then
-        name="${service_alias[0]}"
-    fi
 
     for key in ${!__container_names[*]}; do
         if [[ $name == ${__container_names[$key]} ]]; then
-            echo "${__container_definitions[$key]}" && return 0
+            echo "${__container_definitions[$key]}"
+
+            return 0
         fi
     done
 
     if [[ -n $default ]]; then
         echo "$default"
     else
-        echo "Error: No definition exists for the '$name' service." && return 1
+        echo "Error: No definition exists for the '$name' service."
+
+        return 1
     fi
 }
 
@@ -116,7 +158,9 @@ container::resolve() {
         return 0 # return here because the name has been matched
     done
 
-    echo "Error: The '$name' service cannot be resolved." && return 1
+    echo "Error: The '$name' service cannot be resolved."
+
+    return 1
 }
 
 ##
@@ -136,13 +180,13 @@ container::get_source() {
 container::dump() {
     local filter=$@
 
-    if [[ -z "${filter[*]}" ]]; then
-        filter=(${__container_names[*]})
+    if [[ -z "${filter[@]}" ]]; then
+        filter=("${__container_names[@]}")
     fi
 
     local name
-    for name in ${filter[*]}; do
-        local definition=($(container::get_definition "$name" "[null]"))
+    for name in ${filter[@]}; do
+        local definition=$(container::get_definition "$name" "[null]")
 
         if [[ $definition == "[null]" ]]; then
             echo " - $name ([definition not found])"
@@ -150,9 +194,11 @@ container::dump() {
             continue
         fi
 
-        echo " - $name (${definition[0]})"
-        for argument in ${definition[*]:1}; do
-            echo "   - $argument"
+        source "$__container_bash_clash" "${definition[@]}"
+
+        echo " - $name ($(bash_clash::get "type"))"
+        for element in "${bash_clash_all[@]:1}"; do
+            echo "   - $element"
         done
     done
 }
