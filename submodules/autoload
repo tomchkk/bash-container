@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+##
+# Builds project submodule autoload string.
+##
+__submarine_autoload::handle() {
+    local name=$(echo $1 | sed -E 's/(\/|-)/_/g')
+    local path="$2/$3"
+
+    local submodule=("$name=$path")
+
+    echo ${submodule[@]}
+}
+
+##
+# Builds project submodule 'name => path' map.
+##
+__submarine_autoload::submodules() {
+    export -f __submarine_autoload::handle
+
+    local submodules=($(
+        cd $(dirname ${BASH_SOURCE[0]})
+        git submodule foreach --quiet '
+            echo $(__submarine_autoload::handle $name $toplevel $sm_path)
+        '
+    ))
+
+    echo ${submodules[@]}
+}
+
+__submarine_autoload_submodules=$(__submarine_autoload::submodules)
+
+if [[ ! -z ${__submarine_autoload_submodules[@]} ]]; then
+    declare ${__submarine_autoload_submodules[@]}
+fi
+
+unset __submarine_autoload_submodules
