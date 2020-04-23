@@ -2,9 +2,7 @@
 
 __bash_container_dir="$(dirname ${BASH_SOURCE[0]})"
 
-source "$__bash_container_dir/submodules/autoload"
-
-__bash_container_bash_clash="$tomchkk_bash_clash/src/index"
+__bash_container_bash_clash="$tomchkk_private_projects_bash_clash/src/index"
 __bash_container_bash_logger="$tomchkk_private_projects_bash_logger/src/index"
 
 source "$__bash_container_dir/src/container" "$__bash_container_bash_clash"

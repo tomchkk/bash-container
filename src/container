@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-__container_bash_clash="$1"
+__container_bash_clash=${1:?"bash-clash is required"}
 
 __container_names=()
 __container_definitions=()
