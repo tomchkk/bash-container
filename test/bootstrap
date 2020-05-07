@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+__test_dir="$(dirname "${BASH_SOURCE[0]}")"
+__test_fixtures="$__test_dir/fixtures"
+
+__bash_container="$__test_dir/../src/container"
+
+source "$__test_dir/../submodules/autoload"
+__bash_clash="$tomchkk_private_projects_bash_clash/src/index"
