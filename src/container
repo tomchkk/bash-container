@@ -2,176 +2,171 @@
 
 __container_bash_clash=${1:?"bash-clash is required"}
 
+__container_alias="@"
+__container_type=("SCALAR" "ARRAY" "SERVICE")
+
 __container_names=()
-__container_definitions=()
+__container_types=()
+__container_values=()
 
 ##
-# Adds a scalar value to the container.
+# Adds scalar value items to the container.
 ##
-container::add_value() {
-    local name=${1:?"A name is required"}
-    local definition="--type=scalar --value=${@:2}"
+container::add_scalar() {
+    local name="${1:?"A container item name is required"}"
+    local value="${2:?"An item value is required"}"
 
-    __container::add "$name" "${definition[@]}"
+    __container::add "$name" "0" "${value[@]}"
 }
 
 ##
-# Adds an array value to the container.
+# Adds array-like items to the container.
 ##
 container::add_array() {
-    local name=${1:?"An array name is required"}
-    local definition="--type=array -- ${@:2}"
+    local name="${1:?"A container item name is required"}"
+    local elements="$(echo ${@:2} | sed 's/^-- //')"
 
-    __container::add "$name" "${definition[@]}"
+    __container::add "$name" "1" "${elements[@]}"
 }
 
 ##
-# Adds a service definition to the container.
+# Adds service items to the container.
 ##
 container::add_service() {
-    local name=${1:?"A service name is required"}
-    local path=${2:?"A source file path is required"}
+    local name="${1:?"A container item name is required"}"
+    local path="${2:?"A service path is required"}"
+    local arguments="${@:3}"
 
-    if [[ ! -e "$path" ]]; then
-        echo "Error: The given path for the '$name' service does not exist."
-
-        return 1
-    fi
-
-    local definition="--type=service --path=$path -- ${@:3}"
-
-    __container::add "$name" "${definition[@]}"
+    __container::add "$name" "2" "$path ${arguments[@]}"
 }
 
 ##
-# Add items to the container
-#
-# The first argument should be the name of the item. The remaining arguments are
-# all treated as the defintiion.
-##
-__container::add() {
-    local name="${1:?"A service name is required"}"
-    local definition="${@:2}"
-
-    __container_names+=("@$(__container::normalize_name $name)")
-    __container_definitions+=("${definition[@]}")
-}
-
-##
-# Normalizes a service definition name.
-##
-__container::normalize_name() {
-    echo "$@" | sed -E 's/ /-/g' | xargs
-}
-
-##
-# Gets the name and any existing suffix for a given service alias.
-##
-__container::parse_alias() {
-    local name="${1:?"A service name is required"}"
-    local service_alias
-
-    if [[ "$name" =~ ^@(.*)::(.*)$ ]]; then
-        # name is an alias joined by a suffix, separated by '::' - i.e.:
-        # '@example-parameter::example-suffix'
-        service_alias=("${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}")
-    elif [[ "$name" =~ ^@(.*)$ ]]; then
-        # name is an alias without a suffix - i.e.: '@example-service'
-        service_alias=("${BASH_REMATCH[1]}")
-    fi
-
-    echo ${service_alias[*]}
-}
-
-##
-# Get the definition of a given parameter or service
+# Gets the definition of an item in the container using it's alias - e.g.:
+# - (scalar):   'SCALAR -- Value item'
+# - (array):    'ARRAY -- element 1 -- element 2'
+# - (service):  'SERVICE -- /path/2/service --arg1=named arg -- positional-arg'
 ##
 container::get_definition() {
-    local name="${1:?"A service name is required"}"
+    local alias="${1:?"A service alias is required"}"
     local default="${2:-}"
 
-    for key in ${!__container_names[*]}; do
-        if [[ $name == ${__container_names[$key]} ]]; then
-            echo "${__container_definitions[$key]}"
+    local key=$(__container::get_key_for_alias "$alias")
+    if [[ "$key" -ge 0 ]]; then
+        echo "${__container_types[$key]} -- ${__container_values[$key]}"
 
-            return 0
-        fi
-    done
+        return 0
+    fi
 
-    if [[ -n $default ]]; then
+    if [[ -n "$default" ]]; then
         echo "$default"
-    else
-        echo "Error: No definition exists for the '$name' service."
 
-        return 1
-    fi
-}
-
-##
-# Recursively resolves the definition of a given parameter, optionally returning
-# handles - e.g.: --handle - for each named service defined as a dependency.
-##
-container::resolve() {
-    local name="${1:?"A service name is required"}"
-    local optionHandles=${2:-false}
-    local depth=${3:-0}
-
-    local suffix
-    local service_alias=($(__container::parse_alias "$name"))
-
-    if [[ -n $service_alias ]]; then
-        name=${service_alias[0]}
-        suffix=${service_alias[1]}
+        return 0
     fi
 
-    for key in ${!__container_names[*]}; do
-        if [[ ${__container_names[$key]} != "$name" ]]; then
-            continue
-        fi
-
-        local defined
-        local switch
-
-        if $optionHandles; then
-            # add an argument handle to resolved service value
-            [[ $depth > 0 ]] && switch="--$name "
-        fi
-
-        for definition in $(container::get_definition "$name"); do
-            local args=("$definition" $optionHandles $(( $depth + 1 )))
-
-            defined="$(container::resolve ${args[*]})"
-
-            if [[ $? -eq 1 ]]; then
-                # container::get_definition threw an error, meaning that no
-                # service was found for the definition; we'll just use its
-                # current value
-                defined="$definition"
-            fi
-
-            echo "${switch}${defined}${suffix}"
-
-            unset switch
-            unset args
-        done
-
-        return 0 # return here because the name has been matched
-    done
-
-    echo "Error: The '$name' service cannot be resolved."
+    echo "No definition exists for the '$alias' service" >&2
 
     return 1
 }
 
 ##
-# Gets the source path of a given service or the elements, if the service is
-# an array-like structure - i.e. begins with '--'.
+# Get a container item's values using it's alias - e.g.:
+#  - (scalar):  'Value item'
+#  - (array):   'element 1 -- element 2'
+#  - (service): '/path/2/service --arg1=named arg -- positional-item'
 ##
-container::get_source() {
-    local name="${1:?"A service name is required"}"
-    local src=($(container::get_definition "$name"))
+container::get_values() {
+    local alias="${1:?"A service alias is required"}"
+    local default="${2:-}"
 
-    echo ${src[0]}
+    local key=$(__container::get_key_for_alias "$alias")
+    if [[ "$key" -ge 0 ]]; then
+        echo "${__container_values[$key]}"
+
+        return 0
+    fi
+
+    if [[ -n "$default" ]]; then
+        echo "$default"
+
+        return 0
+    fi
+
+    echo "The '$alias' service is not defined" >&2
+
+    return 1
+}
+
+##
+# Gets a defined service's type.
+##
+container::get_type() {
+    local alias="${1:?"A service alias is required"}"
+
+    local key=$(__container::get_key_for_alias "$alias")
+    if [[ "$key" -ge 0 ]]; then
+        echo "${__container_types[$key]}"
+
+        return 0
+    fi
+
+    echo "Cannot get type for the undefined '$alias' service" >&2
+
+    return 1
+}
+
+##
+# Gets the source path of a service definition.
+##
+container::get_source_path() {
+    local alias="${1:?"A service alias is required"}"
+
+    local values="$(container::get_values "$alias" false)"
+    if [[ "$values" == false ]]; then
+        echo "Cannot get source path for the undefined '$alias' service" >&2
+
+        return 1
+    fi
+
+    local type="$(container::get_type "$alias")"
+    if [[ "$type" != "${__container_type[2]}" ]]; then
+        echo "Cannot get source path for a '$type' container item" >&2
+
+        return 1
+    fi
+
+    echo $(__container::parse_position_from_arguments "0" "${values[@]}")
+}
+
+##
+# Resolves the definition of a given service alias.
+##
+container::resolve() {
+    local alias="${1:?"A service alias is required"}"
+    local recursing="${2:-false}"
+
+    local values="$(container::get_values "$alias" false)"
+    if [[ "$values" == false ]]; then
+        echo "The '$alias' service cannot be resolved" >&2
+
+        return 1
+    fi
+
+    case "$(container::get_type "$alias")" in
+        "${__container_type[0]}") # SCALAR
+            echo $(__container::resolve_references "${values[@]}")
+        ;;
+        "${__container_type[1]}") # ARRAY
+            echo $(__container::resolve_references "${values[@]}")
+        ;;
+        "${__container_type[2]}") # SERVICE
+            if $recursing; then
+                # services shouldn't be resolved recursively
+                return 2
+            fi
+
+            echo $(__container::resolve_references "${values[@]}")
+        ;;
+    esac
 }
 
 ##
@@ -186,19 +181,141 @@ container::dump() {
 
     local name
     for name in ${filter[@]}; do
-        local definition=$(container::get_definition "$name" "[null]")
+        local definition=$(container::get_definition "$name" false)
 
-        if [[ $definition == "[null]" ]]; then
+        if [[ $definition == false ]]; then
             echo " - $name ([definition not found])"
 
             continue
         fi
 
-        source "$__container_bash_clash" "${definition[@]}"
 
-        echo " - $name ($(bash_clash::get "type"))"
+        echo " - $name ($(container::get_type "$name"))"
+
+        source "$__container_bash_clash" "${definition[@]}"
         for element in "${bash_clash_all[@]:1}"; do
             echo "   - $element"
         done
     done
+}
+
+##
+# Recursively resolves container references in a given value - i.e.:
+# __container::resolve_references "@value-1/@value-2" ->
+#  - [value of @value-1]/[value of @value-2]
+##
+__container::resolve_references() {
+    local args="$@" hash=""
+
+    if [[ "$args" == *"\\$__container_alias"* ]]; then
+        # args contain an escaped alias character, so we'll swap it out for a
+        # hash and replace it at the end of the process
+        hash=$(echo "$args" | cksum | cut -d ' ' -f 1)
+        args="${args//\\$__container_alias/$hash}"
+    fi
+
+    # anything before the first alias indicator is a prefix so can make up the
+    # first characters of $resolved
+    local resolved=$(echo "$args" | cut -d "$__container_alias" -f 1)
+    local value="${args#"$resolved"}"
+
+    local candidates
+    if [[ -n "$value" ]]; then
+        local bk="$IFS"
+        IFS="$__container_alias"; read -ra candidates <<< "$value"
+        IFS="$bk"
+    fi
+
+    local candidate reference suffix
+    for candidate in "${candidates[@]}"; do
+        if [[ -z "$candidate" ]]; then
+            continue
+        fi
+
+        if [[ "$candidate" =~ ^{(.*)}(.*)$ ]]; then
+            # capture encapsulated references - i.e.: @{reference}suffix
+            reference="${BASH_REMATCH[1]}"
+            suffix="${BASH_REMATCH[2]}"
+        else
+            # capture space-separated references - i.e.: @reference suffix
+            reference="$(echo $candidate | cut -d ' ' -f 1)"
+            suffix="${candidate#"$reference"}"
+        fi
+
+        reference="$(container::resolve "$reference" true)"
+
+        case "$?" in
+            0) resolved+="${reference}${suffix}" ;;
+            2) resolved+="${__container_alias}${candidate}" ;;
+            *)
+                echo "There was an error resolving reference argument '$args'" >&2
+
+                return 1
+            ;;
+        esac
+    done
+
+    echo "${resolved//$hash/$__container_alias}"
+}
+
+##
+# Adds items to the container.
+##
+__container::add() {
+    local name="${1:?"A container item name is required"}"
+    local type="${2:?"A container item type is required"}"
+    local values="${@:3}"
+
+    __container_names+=("$(__container::normalize_name $name)")
+    __container_types+=("${__container_type[$type]}")
+    __container_values+=("${values[@]}")
+}
+
+##
+# Normalizes a service name.
+##
+__container::normalize_name() {
+    echo "${@// /-}" | xargs
+}
+
+##
+# Gets the key for container item.
+##
+__container::get_key_for_alias() {
+    local alias="${1:?"A service alias is required"}"
+    local name=$(__container::get_name_for_alias "$alias")
+
+    for key in ${!__container_names[*]}; do
+        if [[ "$name" == "${__container_names[$key]}" ]]; then
+            echo "$key"
+
+            return 0
+        fi
+    done
+
+    echo "-1"
+
+    return 1
+}
+
+##
+# Extracts a service name from a service alias.
+##
+__container::get_name_for_alias() {
+    local alias="${1:?"A service alias is required"}"
+
+    echo "${alias/$__container_alias}"
+}
+
+##
+# Parses the requested positional item from the given arguments.
+##
+__container::parse_position_from_arguments() {
+    local position="${1:?"An option position to parse is required"}"
+    local arguments=${@:2}
+
+    echo $(
+        source $__container_bash_clash "${arguments[@]}"
+        echo "${bash_clash_all[$position]}"
+    )
 }
