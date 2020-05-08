@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+source "$(dirname "${BASH_SOURCE[0]}")/bootstrap"
+
+loader_test::before_each() {
+    source "$__bash_container" "$__bash_clash"
+
+    container::add_scalar "value-1" "Value item"
+    container::add_array "array-1" -- "element 1" -- "@value-1"
+    container::add_service "service-1" "$__test_fixtures/test-service" \
+        --arg-1="@service-2" \
+        -- "@array-1"
+    container::add_service "service-2" "$__test_fixtures/test-service" \
+        --arg-1="@value-1" \
+        -- "@array-1"
+
+    source "$__bash_loader" "$__bash_clash"
+}
+
+loader_test::test_source() {
+    local actual expected
+
+    # loads with builtin source when passed a normal file path
+    actual=$(loader::source "$__test_fixtures/test-service" "@value-1")
+    expected="@value-1"
+    bash_assert::assert_equals "$expected" "$actual"
+
+    # a non-existent service is not loaded
+    actual=$(loader::source "@service-x" 2>&1)
+    expected="The '@service-x' service could not be loaded"
+    bash_assert::assert_equals "$expected" "$actual"
+
+    # a container resource is resolved and loaded, declaring named parameters
+    # passing-in additional positional arguments
+    actual=$(loader::source "@service-1" -- "more arguments" --arg-2="arg 2")
+    expected="@service-2
+element 1
+Value item
+more arguments
+arg 2"
+    bash_assert::assert_equals "$expected" "$actual"
+}

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+[[ -n "$arg_1" ]] && echo "$arg_1"
+
+for item in "$@"; do
+    echo $item
+done
+
+[[ -n "$arg_2" ]] && echo "$arg_2"

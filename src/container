@@ -151,12 +151,13 @@ container::resolve() {
         return 1
     fi
 
+    local resolved
     case "$(container::get_type "$alias")" in
         "${__container_type[0]}") # SCALAR
-            echo $(__container::resolve_references "${values[@]}")
+            resolved=$(__container::resolve_references "${values[@]}")
         ;;
         "${__container_type[1]}") # ARRAY
-            echo $(__container::resolve_references "${values[@]}")
+            resolved=$(__container::resolve_references "${values[@]}")
         ;;
         "${__container_type[2]}") # SERVICE
             if $recursing; then
@@ -164,9 +165,11 @@ container::resolve() {
                 return 2
             fi
 
-            echo $(__container::resolve_references "${values[@]}")
+            resolved=$(__container::resolve_references "${values[@]}")
         ;;
     esac
+
+    echo "$resolved"
 }
 
 ##

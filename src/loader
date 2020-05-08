@@ -1,73 +1,34 @@
 #!/usr/bin/env bash
 
-__loader_logger="${1:?"A logger service is required"}"
+__loader_bash_clash=${1:?"bash-clash is required"}
 
 ##
-# Ships a debug log for the dependency loader, maintaining the logger in a sub
-# process to avoid clashing with other loaded loggers.
+# Either sources a resolved file source path, or loads a container resource by
+# resolving a given name or alias.
 ##
-__loader::log() {
-    local level="${1:?"A logging level is required"}"
-    local message="${2:?"A log message is required"}"
-    local context="${@:3}"
+loader::source() {
+    local resource="${1:?"A resource name, alias or a file path is required"}"
+    local args=${@:2}
 
-    (
-        builtin source $(container::resolve "$__loader_logger")
-        log::log "$level" "$message" ${context[*]} &
-    )
-}
+    if [[ -f "$resource" ]]; then
+        # we've got a plain ole file to be sourced, maybe with some args...
+        builtin source "$resource" "${args[@]}"
 
-##
-# Overrides the builtin source function to enable dependency loading.
-##
-source() {
-    local __service_source="${1:?"A service, alias or filename argument is required"}"
-    local __service_args=${@:2}
-
-    if [[ -f "$__service_source" ]]; then
-        # we're dealing with a plain ole' file to be sourced, maybe with some args..
-        builtin source "$__service_source" $__service_args
-
-        return 0
+        return $?
     fi
 
-    local __service_alias="$__service_source"
-    local __service_definition=($(container::get_definition "$__service_alias"))
-
-    if [[ $? -eq 1 ]]; then
-        __loader::log "ERROR" "The service '$__service_alias' could not be loaded."
+    # must split the declaration and assignment to capture the return code
+    local resolved; resolved=$(container::resolve "$resource" 2>&1)
+    if [[ $? -gt 0 ]]; then
+        echo "The '$resource' service could not be loaded"
 
         return 1
     fi
 
-    __service_source=${__service_definition[0]}
-    local __service_dependencies=()
+    # pass all resolved and trailing arguments into bash-clash, declaring any
+    # named arguments
+    builtin source $__loader_bash_clash --declare "${resolved[@]}" "${args[@]}"
 
-    __loader::log "DEBUG" "Loading '$__service_alias'" "$__service_source"
-
-    local __service_dependency
-    for __service_dependency in ${__service_definition[*]:1}; do
-        local __dependency_definition=(
-            $(container::get_definition "$__service_dependency" "$__service_dependency")
-        )
-
-        if [[ -f ${__dependency_definition[0]} ]]; then
-            __service_dependencies+=($__service_dependency)
-            __loader::log "DEBUG" "Loadable dependency '$__service_dependency'" "${__dependency_definition[0]}"
-        else
-            __service_dependencies+=(${__dependency_definition[*]})
-            __loader::log "DEBUG" "Non-loadable dependency '$__service_dependency'" "${__dependency_definition[*]}"
-        fi
-    done
-
-    builtin source $__service_source ${__service_dependencies[*]} $__service_args
-
-    # unset \
-    #     __service_alias \
-    #     __service_args \
-    #     __service_definition \
-    #     __service_source \
-    #     __service_dependencies \
-    #     __service_dependency \
-    #     __dependency_definition
+    # finally we have all service positional arguments properly parsed
+    builtin source "${bash_clash_positionals[@]}"
 }
