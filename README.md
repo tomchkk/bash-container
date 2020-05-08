@@ -77,3 +77,13 @@ Escaping the alias indicator can be achieved with a leading `\`, as in:
 ```
 container::add_scalar "email-address" "name\@email.com"
 ```
+
+### Loading Container Services
+
+Once defined, container resources services can be loaded by calling the `loader::source` function, followed by the service alias, as well as any trailing run-time arguments - e.g.:
+
+```
+loader::source @service-1 "argument value" --named-arg="named argument"
+```
+
+All of `service-1`'s dependencies, as defined in the container will be injected into the script including with trailing arguments. Positional parameters will be asssigned to `$@` and `$1`, `$2`, etc as usual. Any named parameters will be normalized and declared as a parameter within the script. For example, `--named-arg="named argument"` would be declared as `named_arg` with a value of _named argument_.
