@@ -4,11 +4,6 @@
 	branch = master
 	super = self
 	super = submodules/tomchkk-private/projects/bash-test
-[submodule "tomchkk-private/projects/bash-logger"]
-	path = submodules/tomchkk-private/projects/bash-logger
-	url = git@gitlab.com:tomchkk-private/projects/bash-logger.git
-	branch = master
-	super = self
 [submodule "tomchkk-private/projects/bash-test"]
 	path = submodules/tomchkk-private/projects/bash-test
 	url = git@gitlab.com:tomchkk-private/projects/bash-test.git
