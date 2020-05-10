@@ -193,7 +193,7 @@ container::dump() {
         fi
 
 
-        echo " - $name ($(container::get_type "$name"))"
+        echo " - $(__container::get_name_for_alias "$name") ($(container::get_type "$name"))"
 
         source "$__container_bash_clash" "${definition[@]}"
         for element in "${bash_clash_all[@]:1}"; do

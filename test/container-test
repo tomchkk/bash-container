@@ -359,8 +359,8 @@ container_test::test_container_dump() {
    - Value item"
     bash_assert::assert_equals "$expected" "$actual"
 
-    # multiple services can be filtered
-    actual=$(container::dump test-value test-array)
+    # multiple services can be filtered, including by alias
+    actual=$(container::dump test-value @test-array)
     expected=" - test-value (SCALAR)
    - Value item
  - test-array (ARRAY)
