@@ -32,11 +32,11 @@ loader_test::test_source() {
 
     # a container resource is resolved and loaded, declaring named parameters
     # passing-in additional positional arguments
-    actual=$(loader::source "@service-1" -- "more arguments" --arg-2="arg 2")
+    actual=$(loader::source "@service-1" "sub-command" "--test")
     expected="@service-2
 element 1
 Value item
-more arguments
-arg 2"
+sub-command
+--test"
     bash_assert::assert_equals "$expected" "$actual"
 }

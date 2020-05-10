@@ -25,10 +25,9 @@ loader::source() {
         return 1
     fi
 
-    # pass all resolved and trailing arguments into bash-clash, declaring any
-    # named arguments
-    builtin source $__loader_bash_clash --declare "${resolved[@]}" ${args[@]}
+    # pass all resolved into bash-clash, declaring any named arguments
+    builtin source $__loader_bash_clash --declare "${resolved[@]}"
 
     # finally we have all service positional arguments properly parsed
-    builtin source "${bash_clash_positionals[@]}"
+    builtin source "${bash_clash_positionals[@]}" ${args[@]}
 }
