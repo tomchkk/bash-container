@@ -8,11 +8,11 @@ __loader_bash_clash=${1:?"bash-clash is required"}
 ##
 loader::source() {
     local resource="${1:?"A resource name, alias or a file path is required"}"
-    local args=${@:2}
+    local args="${@:2}"
 
     if [[ -f "$resource" ]]; then
         # we've got a plain ole file to be sourced, maybe with some args...
-        builtin source "$resource" "${args[@]}"
+        builtin source "$resource" ${args[@]}
 
         return $?
     fi
@@ -27,7 +27,7 @@ loader::source() {
 
     # pass all resolved and trailing arguments into bash-clash, declaring any
     # named arguments
-    builtin source $__loader_bash_clash --declare "${resolved[@]}" "${args[@]}"
+    builtin source $__loader_bash_clash --declare "${resolved[@]}" ${args[@]}
 
     # finally we have all service positional arguments properly parsed
     builtin source "${bash_clash_positionals[@]}"
