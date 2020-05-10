@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-__bash_container_dir="$(dirname ${BASH_SOURCE[0]})"
-
-__bash_container_bash_clash="$tomchkk_private_projects_bash_clash/src/index"
-
-source "$__bash_container_dir/src/container" "$__bash_container_bash_clash"
-
-bash_container_loader="$__bash_container_dir/src/loader"
