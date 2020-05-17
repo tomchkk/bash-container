@@ -44,6 +44,17 @@ container_test::test_add_scalar() {
     actual=$(container::get_values "@test-value")
     expected="Value item"
     bash_assert::assert_equals "$expected" "$actual"
+
+    # boolean scalar can be added
+    container::add_scalar "test-bool" "false"
+    actual=$(container::get_definition "@test-bool")
+    expected="SCALAR -- false"
+    bash_assert::assert_equals "$expected" "$actual"
+
+    # undefined reserved value cannot be added as a value
+    actual="$(container::add_scalar "test-undefined" "[undefined]" 2>&1)"
+    expected="'[undefined]' is a reserved value"
+    bash_assert::assert_equals "$expected" "$actual"
 }
 
 container_test::test_add_array() {
@@ -66,6 +77,12 @@ container_test::test_add_array() {
 
     actual=$(container::get_values "@test-array-2")
     expected="element 1 -- element 2"
+    bash_assert::assert_equals "$expected" "$actual"
+
+    # boolean array values can be added
+    container::add_array "test-bools" -- "false" -- "true"
+    actual=$(container::get_definition "@test-bools")
+    expected="ARRAY -- false -- true"
     bash_assert::assert_equals "$expected" "$actual"
 }
 
@@ -100,6 +117,18 @@ container_test::test_add_service() {
 
     actual=$(container::get_values "@test-service-2")
     expected="$__test_fixtures/test service -- item 1 -- item 2"
+    bash_assert::assert_equals "$expected" "$actual"
+
+    # a service with a boolean argument can be added
+    container::add_service "test-service-with-bool" \
+        "$__test_fixtures/test-service" \
+            -- "false"
+    actual=$(container::get_definition "@test-service-with-bool")
+    expected="SERVICE -- $__test_fixtures/test-service -- false"
+    bash_assert::assert_equals "$expected" "$actual"
+
+    actual=$(container::get_values "@test-service-with-bool")
+    expected="$__test_fixtures/test-service -- false"
     bash_assert::assert_equals "$expected" "$actual"
 }
 
@@ -228,6 +257,12 @@ container_test::test_resolve_value() {
     container::add_scalar "value-10" "email\@domain-1.com; email\@domain-2.com: @value-1"
     actual="$(container::resolve "@value-10")"
     expected="email@domain-1.com; email@domain-2.com: Value item 1"
+    bash_assert::assert_equals "$expected" "$actual"
+
+    # resolves an bool
+    container::add_scalar "value-bool" "false"
+    actual="$(container::resolve "@value-bool")"
+    expected="false"
     bash_assert::assert_equals "$expected" "$actual"
 }
 
@@ -370,6 +405,6 @@ container_test::test_container_dump() {
 
     # a non-existent service is handled
     actual=$(container::dump test-values)
-    expected=$(echo " - test-values ([definition not found])")
+    expected=$(echo " - test-values ([undefined])")
     bash_assert::assert_equals "$expected" "$actual"
 }

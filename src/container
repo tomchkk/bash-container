@@ -9,6 +9,8 @@ __container_names=()
 __container_types=()
 __container_values=()
 
+__container_undefined="[undefined]"
+
 ##
 # Adds scalar value items to the container.
 ##
@@ -120,8 +122,8 @@ container::get_type() {
 container::get_source_path() {
     local alias="${1:?"A service alias is required"}"
 
-    local values="$(container::get_values "$alias" false)"
-    if [[ "$values" == false ]]; then
+    local values="$(container::get_values "$alias" "$__container_undefined")"
+    if [[ "${values[@]}" == "$__container_undefined" ]]; then
         echo "Cannot get source path for the undefined '$alias' service" >&2
 
         return 1
@@ -144,8 +146,8 @@ container::resolve() {
     local alias="${1:?"A service alias is required"}"
     local recursing="${2:-false}"
 
-    local values="$(container::get_values "$alias" false)"
-    if [[ "$values" == false ]]; then
+    local values="$(container::get_values "$alias" "$__container_undefined")"
+    if [[ "${values[@]}" == "$__container_undefined" ]]; then
         echo "The '$alias' service cannot be resolved" >&2
 
         return 1
@@ -184,10 +186,12 @@ container::dump() {
 
     local name
     for name in ${filter[@]}; do
-        local definition=$(container::get_definition "$name" false)
+        local definition=$(
+            container::get_definition "$name" "$__container_undefined"
+        )
 
-        if [[ $definition == false ]]; then
-            echo " - $name ([definition not found])"
+        if [[ $definition == "$__container_undefined" ]]; then
+            echo " - $name ($__container_undefined)"
 
             continue
         fi
@@ -268,6 +272,14 @@ __container::add() {
     local name="${1:?"A container item name is required"}"
     local type="${2:?"A container item type is required"}"
     local values="${@:3}"
+
+    for value in ${values[@]}; do
+        if [[ "$value" == "$__container_undefined" ]]; then
+            echo "'$__container_undefined' is a reserved value" >&2
+
+            return 1
+        fi
+    done
 
     __container_names+=("$(__container::normalize_name $name)")
     __container_types+=("${__container_type[$type]}")
