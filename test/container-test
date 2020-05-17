@@ -372,9 +372,6 @@ container_test::test_container_dump() {
             --arg-1="arg 1" \
             -- "@test-value"
 
-    # container::dump
-    # return 0
-
     # all service items are dumped correctly
     actual=$(container::dump)
     expected=" - test-value (SCALAR)
