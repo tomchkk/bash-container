@@ -207,6 +207,27 @@ container::dump() {
 }
 
 ##
+# Adds items to the container.
+##
+__container::add() {
+    local name="${1:?"A container item name is required"}"
+    local type="${2:?"A container item type is required"}"
+    local values="${@:3}"
+
+    for value in ${values[@]}; do
+        if [[ "$value" == "$__container_undefined" ]]; then
+            echo "'$__container_undefined' is a reserved value" >&2
+
+            return 1
+        fi
+    done
+
+    __container_names+=("$(__container::normalize_name $name)")
+    __container_types+=("${__container_type[$type]}")
+    __container_values+=("${values[@]}")
+}
+
+##
 # Recursively resolves container references in a given value - i.e.:
 # __container::resolve_references "@value-1/@value-2" ->
 #  - [value of @value-1]/[value of @value-2]
@@ -263,27 +284,6 @@ __container::resolve_references() {
     done
 
     echo "${resolved//$hash/$__container_alias}"
-}
-
-##
-# Adds items to the container.
-##
-__container::add() {
-    local name="${1:?"A container item name is required"}"
-    local type="${2:?"A container item type is required"}"
-    local values="${@:3}"
-
-    for value in ${values[@]}; do
-        if [[ "$value" == "$__container_undefined" ]]; then
-            echo "'$__container_undefined' is a reserved value" >&2
-
-            return 1
-        fi
-    done
-
-    __container_names+=("$(__container::normalize_name $name)")
-    __container_types+=("${__container_type[$type]}")
-    __container_values+=("${values[@]}")
 }
 
 ##
