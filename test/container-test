@@ -55,6 +55,12 @@ container_test::test_add_scalar() {
     actual="$(container::add_scalar "test-undefined" "[undefined]" 2>&1)"
     expected="'[undefined]' is a reserved value"
     bash_assert::assert_equals "$expected" "$actual"
+
+    # scalar value can contain an arrow
+    container::add_scalar "test-arrow" " ->"
+    actual=$(container::get_definition "@test-arrow")
+    expected="SCALAR --  ->"
+    bash_assert::assert_equals "$expected" "$actual"
 }
 
 container_test::test_add_array() {
@@ -129,6 +135,14 @@ container_test::test_add_service() {
 
     actual=$(container::get_values "@test-service-with-bool")
     expected="$__test_fixtures/test-service -- false"
+    bash_assert::assert_equals "$expected" "$actual"
+
+    # a service can contain a scalar dependency of an arrow
+    container::add_service "test-service-with-arrow" \
+        "$__test_fixtures/test-service" \
+            -- " ->"
+    actual=$(container::get_definition "@test-service-with-arrow")
+    expected="SERVICE -- $__test_fixtures/test-service --  ->"
     bash_assert::assert_equals "$expected" "$actual"
 }
 
@@ -264,6 +278,12 @@ container_test::test_resolve_value() {
     actual="$(container::resolve "@value-bool")"
     expected="false"
     bash_assert::assert_equals "$expected" "$actual"
+
+    # resolves an arrow
+    container::add_scalar "test-arrow" " ->"
+    actual=$(container::resolve "@test-arrow")
+    expected=" ->"
+    bash_assert::assert_equals "$expected" "$actual"
 }
 
 container_test::test_resolve_array() {
@@ -360,6 +380,14 @@ container_test::test_resolve_service() {
     actual="$(container::resolve "@service-6")"
     expected="$__test_fixtures/test-service -- first -- Element 1 -- Element 2 -- last"
     bash_assert::assert_equals "$expected" "$actual"
+
+    # resolves a service with an arrow value as a dependency
+    container::add_service "service-7" \
+        "$__test_fixtures/test-serivce" \
+            -- " ->"
+    actual=$(container::resolve "@service-7")
+    expected="$__test_fixtures/test-serivce --  ->"
+    bash_assert::assert_equals "$expected" "$actual"
 }
 
 container_test::test_container_dump() {
@@ -403,5 +431,15 @@ container_test::test_container_dump() {
     # a non-existent service is handled
     actual=$(container::dump test-values)
     expected=$(echo " - test-values ([undefined])")
+    bash_assert::assert_equals "$expected" "$actual"
+
+    # dumps a service with an arrow value as a dependency
+    container::add_service "service-7" \
+        "$__test_fixtures/test-service" \
+            -- " ->"
+    actual=$(container::dump "@service-7")
+    expected=" - service-7 (SERVICE)
+   - $__test_fixtures/test-service
+   - ->"
     bash_assert::assert_equals "$expected" "$actual"
 }
