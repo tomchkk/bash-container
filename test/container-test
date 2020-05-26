@@ -390,7 +390,7 @@ container_test::test_resolve_service() {
     bash_assert::assert_equals "$expected" "$actual"
 }
 
-container_test::test_container_dump() {
+container_test::test_container_print_definitions() {
     local actual expected
 
     container::add_scalar "test-value" "Value item"
@@ -400,8 +400,8 @@ container_test::test_container_dump() {
             --arg-1="arg 1" \
             -- "@test-value"
 
-    # all service items are dumped correctly
-    actual=$(container::dump)
+    # all service items are printed correctly
+    actual=$(container::print_definitions)
     expected=" - test-value (SCALAR)
    - Value item
  - test-array (ARRAY)
@@ -414,13 +414,13 @@ container_test::test_container_dump() {
     bash_assert::assert_equals "$expected" "$actual"
 
     # services can be filtered
-    actual=$(container::dump test-value)
+    actual=$(container::print_definitions test-value)
     expected=" - test-value (SCALAR)
    - Value item"
     bash_assert::assert_equals "$expected" "$actual"
 
     # multiple services can be filtered, including by alias
-    actual=$(container::dump test-value @test-array)
+    actual=$(container::print_definitions test-value @test-array)
     expected=" - test-value (SCALAR)
    - Value item
  - test-array (ARRAY)
@@ -429,15 +429,15 @@ container_test::test_container_dump() {
     bash_assert::assert_equals "$expected" "$actual"
 
     # a non-existent service is handled
-    actual=$(container::dump test-values)
+    actual=$(container::print_definitions test-values)
     expected=$(echo " - test-values ([undefined])")
     bash_assert::assert_equals "$expected" "$actual"
 
-    # dumps a service with an arrow value as a dependency
+    # prints a service with an arrow value as a dependency
     container::add_service "service-7" \
         "$__test_fixtures/test-service" \
             -- " ->"
-    actual=$(container::dump "@service-7")
+    actual=$(container::print_definitions "@service-7")
     expected=" - service-7 (SERVICE)
    - $__test_fixtures/test-service
    - ->"

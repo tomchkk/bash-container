@@ -175,9 +175,9 @@ container::resolve() {
 }
 
 ##
-# Dumps all or a given sub-section of the container.
+# Prints all or a given list of container resource definitions.
 ##
-container::dump() {
+container::print_definitions() {
     local filter=$@
 
     if [[ -z "${filter[@]}" ]]; then
@@ -195,7 +195,6 @@ container::dump() {
 
             continue
         fi
-
 
         echo " - $(__container::get_name_for_alias "$name") ($(container::get_type "$name"))"
 
