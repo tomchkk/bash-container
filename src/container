@@ -206,6 +206,26 @@ container::print_definitions() {
 }
 
 ##
+# Dumps the container definitions to the given file, or to stdout, if a file is
+# not given
+##
+container::dump() {
+    local target="$1"
+
+    local definitions=(
+        __container_names
+        __container_types
+        __container_values
+    )
+
+    if [[ -n "$target" ]]; then
+        declare -p ${definitions[@]} > "$target"
+    else
+        declare -p ${definitions[@]} >&1
+    fi
+}
+
+##
 # Adds items to the container.
 ##
 __container::add() {

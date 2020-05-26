@@ -443,3 +443,16 @@ container_test::test_container_print_definitions() {
    - ->"
     bash_assert::assert_equals "$expected" "$actual"
 }
+
+container_test::test_dump() {
+    container::add_scalar "test-value" "Value item"
+    container::add_array "test-array" -- "element 1" -- "element 2"
+    container::add_service "test-service" \
+        "$__test_fixtures/test-service" \
+            --arg1="named arg" \
+            -- "positional-arg"
+
+    bash_test::assert_contains "$(container::dump)" "test-value"
+    bash_test::assert_contains "$(container::dump)" "test-array"
+    bash_test::assert_contains "$(container::dump)" "test-service"
+}
