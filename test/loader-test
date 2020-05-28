@@ -23,12 +23,12 @@ loader_test::test_source() {
     # loads with builtin source when passed a normal file path
     actual=$(loader::source "$__test_fixtures/test-service" "@value-1")
     expected="@value-1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # a non-existent service is not loaded
     actual=$(loader::source "@service-x" 2>&1)
     expected="The '@service-x' service could not be loaded"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # a container resource is resolved and loaded, declaring named parameters
     # passing-in additional positional arguments
@@ -38,5 +38,5 @@ element 1
 Value item
 sub-command
 --test"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 }

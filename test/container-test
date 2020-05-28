@@ -12,11 +12,11 @@ container_test::test_get_definition() {
     # an error is thrown when a definition isn't found
     actual=$(container::get_definition "@not-defined" 2>&1)
     expected="No definition exists for the '@not-defined' service"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # a default value can be returned when a a definition isn't found
     actual=$(container::get_definition "@not-defined" false)
-    bash_assert::assert_equals "false" "$actual"
+    bash_test::assert_equals "false" "$actual"
 }
 
 container_test::test_get_values() {
@@ -25,11 +25,11 @@ container_test::test_get_values() {
     # an error is thrown when a definition isn't found
     actual=$(container::get_values "@not-defined" 2>&1)
     expected="The '@not-defined' service is not defined"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # a default value can be returned when a a definition isn't found
     actual=$(container::get_values "@not-defined" false)
-    bash_assert::assert_equals "false" "$actual"
+    bash_test::assert_equals "false" "$actual"
 }
 
 container_test::test_add_scalar() {
@@ -39,28 +39,28 @@ container_test::test_add_scalar() {
 
     actual=$(container::get_definition "@test-value")
     expected="SCALAR -- Value item"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     actual=$(container::get_values "@test-value")
     expected="Value item"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # boolean scalar can be added
     container::add_scalar "test-bool" "false"
     actual=$(container::get_definition "@test-bool")
     expected="SCALAR -- false"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # undefined reserved value cannot be added as a value
     actual="$(container::add_scalar "test-undefined" "[undefined]" 2>&1)"
     expected="'[undefined]' is a reserved value"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # scalar value can contain an arrow
     container::add_scalar "test-arrow" " ->"
     actual=$(container::get_definition "@test-arrow")
     expected="SCALAR --  ->"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 }
 
 container_test::test_add_array() {
@@ -71,25 +71,25 @@ container_test::test_add_array() {
 
     actual=$(container::get_definition "@test-array-1")
     expected="ARRAY -- element 1 -- element 2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     actual=$(container::get_values "@test-array-1")
     expected="element 1 -- element 2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     actual=$(container::get_definition "@test-array-2")
     expected="ARRAY -- element 1 -- element 2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     actual=$(container::get_values "@test-array-2")
     expected="element 1 -- element 2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # boolean array values can be added
     container::add_array "test-bools" -- "false" -- "true"
     actual=$(container::get_definition "@test-bools")
     expected="ARRAY -- false -- true"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 }
 
 container_test::test_add_service() {
@@ -105,11 +105,11 @@ container_test::test_add_service() {
 
     actual=$(container::get_definition "@test-service-1")
     expected="SERVICE -- $__test_fixtures/test-service --arg1=named arg 1 --ARG2=named-arg-2 -- positional-item-1 -- positional item 2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     actual=$(container::get_values "@test-service-1")
     expected="$__test_fixtures/test-service --arg1=named arg 1 --ARG2=named-arg-2 -- positional-item-1 -- positional item 2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # a service with an array of arguments can be added
     container::add_service "test-service-2" \
@@ -119,11 +119,11 @@ container_test::test_add_service() {
 
     actual=$(container::get_definition "@test-service-2")
     expected="SERVICE -- $__test_fixtures/test service -- item 1 -- item 2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     actual=$(container::get_values "@test-service-2")
     expected="$__test_fixtures/test service -- item 1 -- item 2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # a service with a boolean argument can be added
     container::add_service "test-service-with-bool" \
@@ -131,11 +131,11 @@ container_test::test_add_service() {
             -- "false"
     actual=$(container::get_definition "@test-service-with-bool")
     expected="SERVICE -- $__test_fixtures/test-service -- false"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     actual=$(container::get_values "@test-service-with-bool")
     expected="$__test_fixtures/test-service -- false"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # a service can contain a scalar dependency of an arrow
     container::add_service "test-service-with-arrow" \
@@ -143,7 +143,7 @@ container_test::test_add_service() {
             -- " ->"
     actual=$(container::get_definition "@test-service-with-arrow")
     expected="SERVICE -- $__test_fixtures/test-service --  ->"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 }
 
 container_test::test_get_type() {
@@ -152,25 +152,25 @@ container_test::test_get_type() {
     # a non-existent service throws an error
     actual=$(container::get_type "@not-defined" 2>&1)
     expected="Cannot get type for the undefined '@not-defined' service"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # the type is returned for an existing service
     container::add_scalar "defined-value" "value"
     actual=$(container::get_type "@defined-value")
     expected="SCALAR"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     container::add_array "defined-array" -- "element 1"
     actual=$(container::get_type "@defined-array")
     expected="ARRAY"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     container::add_service "defined-service" \
         "$__test_fixtures/test-service" \
             -- "arg 1"
     actual=$(container::get_type "@defined-service")
     expected="SERVICE"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 }
 
 container_test::test_get_source_path() {
@@ -179,25 +179,25 @@ container_test::test_get_source_path() {
     # a call for a non-existent service throws an error
     actual=$(container::get_source_path "@not-defined" 2>&1)
     expected="Cannot get source path for the undefined '@not-defined' service"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # a call for a scalar type throws an error
     container::add_scalar "test-value" "value"
     actual=$(container::get_source_path "@test-value" 2>&1)
     expected="Cannot get source path for a 'SCALAR' container item"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # a call for an array type throws an error
     container::add_array "test-array" -- "element-1"
     actual=$(container::get_source_path "@test-array" 2>&1)
     expected="Cannot get source path for a 'ARRAY' container item"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # a call for a service type gets the service path
     container::add_service "test-service" "$__test_fixtures/test-service"
     actual=$(container::get_source_path "@test-service")
     expected="$__test_fixtures/test-service"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 }
 
 container_test::test_resolve() {
@@ -206,7 +206,7 @@ container_test::test_resolve() {
     # a non-existent service cannot be resolved
     actual="$(container::resolve "@not-defined" 2>&1)"
     expected="The '@not-defined' service cannot be resolved"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 }
 
 container_test::test_resolve_value() {
@@ -216,74 +216,74 @@ container_test::test_resolve_value() {
     container::add_scalar "value-1" "Value item 1"
     actual="$(container::resolve "@value-1")"
     expected="Value item 1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves a value reference
     container::add_scalar "value-2" "@value-1"
     actual="$(container::resolve "@value-2")"
     expected="Value item 1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves embedded value references
     container::add_scalar "value-3" "@{value-1}::content/@value-2"
     actual="$(container::resolve "@value-3")"
     expected="Value item 1::content/Value item 1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves joined references
     container::add_scalar "value-4" "@value-1@value-2"
     actual="$(container::resolve "@value-4")"
     expected="Value item 1Value item 1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves space-separated references
     container::add_scalar "value-5" "@value-2 @value-1"
     actual="$(container::resolve "@value-5")"
     expected="Value item 1 Value item 1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves references with a suffix
     container::add_scalar "value-6" "@{value-1}||suffix"
     actual="$(container::resolve "@value-6")"
     expected="Value item 1||suffix"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves references with a prefix
     container::add_scalar "value-7" "prefix->@value-3"
     actual="$(container::resolve "@value-7")"
     expected="prefix->Value item 1::content/Value item 1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves references with multiple suffices
     container::add_scalar "value-8" "@{value-1}||suffix-1/@{value-2}~suffix-2"
     actual="$(container::resolve "@value-8")"
     expected="Value item 1||suffix-1/Value item 1~suffix-2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves value references to an array
     container::add_array "array-1" -- "Element 1" -- "Element 2"
     container::add_scalar "value-9" "@array-1"
     actual="$(container::resolve "@value-9")"
     expected="Element 1 -- Element 2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # handles escaped alias indicators
     container::add_scalar "value-10" "email\@domain-1.com; email\@domain-2.com: @value-1"
     actual="$(container::resolve "@value-10")"
     expected="email@domain-1.com; email@domain-2.com: Value item 1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves an bool
     container::add_scalar "value-bool" "false"
     actual="$(container::resolve "@value-bool")"
     expected="false"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves an arrow
     container::add_scalar "test-arrow" " ->"
     actual=$(container::resolve "@test-arrow")
     expected=" ->"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 }
 
 container_test::test_resolve_array() {
@@ -300,22 +300,22 @@ container_test::test_resolve_array() {
     # resolves a plain array
     actual="$(container::resolve "@array-1")"
     expected="Element 1 -- Element 2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves value references within an array
     actual="$(container::resolve "@array-2")"
     expected="Value 1 -- Value 1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves array references within an array
     actual="$(container::resolve "@array-3")"
     expected="Value 1 -- Element 1 -- Element 2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves joined value references within an array
     actual="$(container::resolve "@array-4")"
     expected="Value 1::suffix/Value 1 -- Element 2"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 }
 
 container_test::test_resolve_service() {
@@ -331,7 +331,7 @@ container_test::test_resolve_service() {
             -- "item 1"
     actual="$(container::resolve "@service-1")"
     expected="$__test_fixtures/test-service --arg-1=arg 1 -- item 1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves a service with a single value reference
     container::add_service "service-2" \
@@ -340,7 +340,7 @@ container_test::test_resolve_service() {
             -- "item 1"
     actual="$(container::resolve "@service-2")"
     expected="$__test_fixtures/test-service --arg-1=Value item 1 -- item 1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves a service with multiple value references
     container::add_service "service-3" \
@@ -349,7 +349,7 @@ container_test::test_resolve_service() {
             -- "@value-1"
     actual="$(container::resolve "@service-3")"
     expected="$__test_fixtures/test-service --arg-1=Value item 1 -- Value item 1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves a service with more multiple value references
     container::add_service "service-4" \
@@ -360,7 +360,7 @@ container_test::test_resolve_service() {
             --arg-3="arg 3 value"
     actual="$(container::resolve "@service-4")"
     expected="$__test_fixtures/test-service --arg-1=Value item 1 --arg-2=arg 2 value -- Value item 1 --arg-3=arg 3 value"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # doesn't resolve service references within a service
     container::add_service "service-5" \
@@ -369,7 +369,7 @@ container_test::test_resolve_service() {
             --arg-2="@value-1"
     actual="$(container::resolve "@service-5")"
     expected="$__test_fixtures/test-service --arg-1=@service-4 --arg-2=Value item 1"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves an array reference within a service
     container::add_service "service-6" \
@@ -379,7 +379,7 @@ container_test::test_resolve_service() {
             -- "last"
     actual="$(container::resolve "@service-6")"
     expected="$__test_fixtures/test-service -- first -- Element 1 -- Element 2 -- last"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # resolves a service with an arrow value as a dependency
     container::add_service "service-7" \
@@ -387,7 +387,7 @@ container_test::test_resolve_service() {
             -- " ->"
     actual=$(container::resolve "@service-7")
     expected="$__test_fixtures/test-serivce --  ->"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 }
 
 container_test::test_container_print_definitions() {
@@ -411,13 +411,13 @@ container_test::test_container_print_definitions() {
    - $__test_fixtures/test-service
    - arg_1=arg 1
    - @test-value"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # services can be filtered
     actual=$(container::print_definitions test-value)
     expected=" - test-value (SCALAR)
    - Value item"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # multiple services can be filtered, including by alias
     actual=$(container::print_definitions test-value @test-array)
@@ -426,12 +426,12 @@ container_test::test_container_print_definitions() {
  - test-array (ARRAY)
    - element 1
    - @test-value"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # a non-existent service is handled
     actual=$(container::print_definitions test-values)
     expected=$(echo " - test-values ([undefined])")
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 
     # prints a service with an arrow value as a dependency
     container::add_service "service-7" \
@@ -441,7 +441,7 @@ container_test::test_container_print_definitions() {
     expected=" - service-7 (SERVICE)
    - $__test_fixtures/test-service
    - ->"
-    bash_assert::assert_equals "$expected" "$actual"
+    bash_test::assert_equals "$expected" "$actual"
 }
 
 container_test::test_dump() {
