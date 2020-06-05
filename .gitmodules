@@ -4,8 +4,10 @@
 	branch = master
 	super = self
 	dev = true
+	version = ^0.4.3
 [submodule "tomchkk-private/projects/bash-clash"]
 	path = submodules/tomchkk-private/projects/bash-clash
 	url = git@gitlab.com:tomchkk-private/projects/bash-clash.git
 	branch = master
 	super = self
+	version = ^1.0.9
