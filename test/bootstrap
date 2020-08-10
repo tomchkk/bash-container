@@ -9,4 +9,4 @@ __test_fixtures="$__test_dir/fixtures"
 __bash_container="$__test_dir/../src/container"
 __bash_loader="$__test_dir/../src/loader"
 
-__bash_clash="$tomchkk_private_projects_bash_clash/src/index"
+__bash_clash="$tomchkk_bash_clash/src/index"

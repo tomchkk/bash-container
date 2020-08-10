@@ -1,13 +1,13 @@
-[submodule "tomchkk-private/projects/bash-test"]
-	path = submodules/tomchkk-private/projects/bash-test
-	url = git@gitlab.com:tomchkk-private/projects/bash-test.git
+[submodule "tomchkk/bash-clash"]
+	path = submodules/tomchkk/bash-clash
+	url = https://github.com/tomchkk/bash-clash
+	branch = master
+	super = self
+	version = ^1.1.0
+[submodule "tomchkk/bash-test"]
+	path = submodules/tomchkk/bash-test
+	url = https://github.com/tomchkk/bash-test
 	branch = master
 	super = self
 	dev = true
-	version = ^0.4.3
-[submodule "tomchkk-private/projects/bash-clash"]
-	path = submodules/tomchkk-private/projects/bash-clash
-	url = git@gitlab.com:tomchkk-private/projects/bash-clash.git
-	branch = master
-	super = self
-	version = ^1.0.9
+	version = ^0.5.1
