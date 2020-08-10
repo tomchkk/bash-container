@@ -4,23 +4,42 @@ Bash Container
 A wicked service container for Bash
 -----------------------------------
 
-Yes, you read right: Bash Container gives you - near as dammnit - the power of dependency injection in Bash!
+Yes, you read right: bash-container gives you the power of dependency injection in Bash!
 
-No more hard paths in scripts forever linking one another in a rigid marriage destined for despare. With Bash Container you can define a script's dependencies in one place - achieving inversion of control in one fell swoop.
+No more hard paths in scripts forever linking one another in a rigid marriage destined for despare. With bash-container you can define a script's dependencies in one place - achieving inversion of control in one fell swoop.
 
-Under the hood, Bash Container extends the bash _builtin_ `source` command. `source` still works in the usual way with a plain old path to an undefined script. However, pass in a registered service name, or its path, and Bash Container's powerful dependency-loader functionality springs in to action. All of the service's dependencies will be injected as arguments to the underlying `source` call, including any additional run-time arguments that you care to throw at it.
+Under the hood, bash-container extends the bash _builtin_ `source` command. `source` still works in the usual way with a plain old path to an undefined script. However, pass in a registered service name, or its path, and bash-container's powerful dependency-loader functionality springs in to action. All of the service's dependencies will be injected as arguments to the underlying `source` call, including any additional run-time arguments that you care to throw at it.
 
 A service's dependencies can be scalar values, array-like values and even other services, which can then themselves be `source`d within the defining service, beginning the merry dance all over again!
 
 ## Installation
 
-TODO: installation details, how to wire-up bash-container itself
+The easiest way to install bash-container into your project is to add it as a dependency of the project using [submarine](https://github.com/tomchkk/submarine):
+
+```sh
+submarine require https://github.com/tomchkk/bash-container
+```
 
 ## Usage
 
+### Integration
+
+You can integrate bash-container functionality as follows:
+
+```bash
+# source bash-container scripts passing-in bash-clash as an argument
+source "$tomchkk_bash_container/src/container" "$tomchkk_bash_clash/src/index"
+source "$tomchkk_bash_container/src/loader" "$tomchkk_bash_clash/src/index"
+
+# extend the 'source' builtin with bash-container loader functionality
+source() { loader::source $@; }
+```
+
+You're then free to define all the services your bash project needs.
+
 ### Defining container items
 
-Bash Container can manage three types of item definition: scalar, array and service.
+bash-container can handle three types of item definition: scalar, array and service.
 
 #### Scalar
 
